@@ -1,0 +1,189 @@
+<!-- pages/recipe/detail.wxml -->
+<view class="container" wx:if="{{recipe}}">
+  <!-- 封面图 -->
+  <view class="cover-section">
+    <image class="cover-image" src="{{recipe.cover}}" mode="aspectFill"></image>
+    <view class="cover-info">
+      <view class="recipe-name">{{recipe.name}}</view>
+      <view class="recipe-meta">
+        <view class="meta-item">
+          <text class="meta-label">难度</text>
+          <text class="meta-value">{{recipe.difficulty}}/5</text>
+        </view>
+        <view class="meta-item">
+          <text class="meta-label">时间</text>
+          <text class="meta-value">{{recipe.time}}分钟</text>
+        </view>
+        <view class="meta-item">
+          <text class="meta-label">分类</text>
+          <text class="meta-value">{{recipe.category}}</text>
+        </view>
+      </view>
+      <view class="recipe-tags">
+        <text class="tag" wx:for="{{recipe.tags}}" wx:key="*this">{{item}}</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 操作栏 -->
+  <view class="action-bar">
+    <view class="action-btn {{isFavorite ? 'active' : ''}}" bindtap="toggleFavorite">
+      <text class="iconfont {{isFavorite ? 'icon-star-filled' : 'icon-star'}}"></text>
+      <text>{{isFavorite ? '已收藏' : '收藏'}}</text>
+    </view>
+    <view class="action-btn" bindtap="toggleNotes">
+      <text class="iconfont icon-edit"></text>
+      <text>笔记</text>
+    </view>
+    <button class="action-btn share-btn" open-type="share">
+      <text class="iconfont icon-share"></text>
+      <text>分享</text>
+    </button>
+  </view>
+
+  <!-- 描述 -->
+  <view class="section">
+    <view class="section-title">简介</view>
+    <view class="description">{{recipe.description}}</view>
+  </view>
+
+  <!-- 食材 -->
+  <view class="section">
+    <view class="section-title">食材</view>
+    <view class="ingredient-list">
+      <view class="ingredient-item" wx:for="{{recipe.ingredients}}" wx:key="name">
+        <view class="ingredient-name">{{item.name}}</view>
+        <view class="ingredient-amount">{{item.amount}}</view>
+        <view class="ingredient-note" wx:if="{{item.note}}">{{item.note}}</view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 工具 -->
+  <view class="section">
+    <view class="section-title">工具</view>
+    <view class="tool-list">
+      <view class="tool-item {{item.required ? 'required' : ''}}" wx:for="{{recipe.tools}}" wx:key="name">
+        <text class="iconfont {{item.required ? 'icon-check-circle' : 'icon-circle'}}"></text>
+        <text>{{item.name}}</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 步骤 -->
+  <view class="section">
+    <view class="section-title">步骤</view>
+
+    <!-- 步骤导航 -->
+    <scroll-view class="step-nav" scroll-x="{{true}}">
+      <view
+        class="step-nav-item {{currentStep === index ? 'active' : ''}}"
+        wx:for="{{recipe.steps}}"
+        wx:key="id"
+        bindtap="changeStep"
+        data-step="{{index}}"
+      >
+        <text class="step-nav-num">{{index + 1}}</text>
+        <text class="step-nav-title text-ellipsis">{{item.title}}</text>
+      </view>
+    </scroll-view>
+
+    <!-- 步骤详情 -->
+    <view class="step-detail">
+      <view class="step-content">
+        <image class="step-image" src="{{recipe.steps[currentStep].image}}" mode="aspectFill"></image>
+        <view class="step-info">
+          <view class="step-title">{{currentStep + 1}}. {{recipe.steps[currentStep].title}}</view>
+          <view class="step-description">{{recipe.steps[currentStep].description}}</view>
+
+          <!-- 计时器 -->
+          <view class="timer" wx:if="{{recipe.steps[currentStep].timer}}">
+            <view class="timer-display">
+              <text class="timer-value">{{timerSeconds || recipe.steps[currentStep].timer.duration}}</text>
+              <text class="timer-unit">秒</text>
+            </view>
+            <view class="timer-desc">{{recipe.steps[currentStep].timer.description}}</view>
+            <view class="timer-controls">
+              <view class="timer-btn" bindtap="toggleTimer">
+                {{timerRunning ? '暂停' : '开始'}}
+              </view>
+              <view class="timer-btn" bindtap="resetTimer">重置</view>
+            </view>
+          </view>
+        </view>
+      </view>
+
+      <!-- 步骤导航按钮 -->
+      <view class="step-nav-buttons">
+        <view
+          class="nav-btn prev {{currentStep === 0 ? 'disabled' : ''}}"
+          bindtap="{{currentStep > 0 ? 'changeStep' : ''}}"
+          data-step="{{currentStep - 1}}"
+        >
+          上一步
+        </view>
+        <view
+          class="nav-btn next {{currentStep === recipe.steps.length - 1 ? 'disabled' : ''}}"
+          bindtap="{{currentStep < recipe.steps.length - 1 ? 'changeStep' : ''}}"
+          data-step="{{currentStep + 1}}"
+        >
+          下一步
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 小贴士 -->
+  <view class="section" wx:if="{{recipe.tips.length > 0}}">
+    <view class="section-title">小贴士</view>
+    <view class="tips-list">
+      <view class="tip-item" wx:for="{{recipe.tips}}" wx:key="*this">
+        <text class="tip-bullet">•</text>
+        <text class="tip-text">{{item}}</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 营养成分 -->
+  <view class="section" wx:if="{{recipe.nutritionFacts}}">
+    <view class="section-title">营养成分</view>
+    <view class="nutrition-facts">
+      <view class="nutrition-item">
+        <text class="nutrition-label">热量</text>
+        <text class="nutrition-value">{{recipe.nutritionFacts.calories}} 千卡</text>
+      </view>
+      <view class="nutrition-item">
+        <text class="nutrition-label">蛋白质</text>
+        <text class="nutrition-value">{{recipe.nutritionFacts.protein}}</text>
+      </view>
+      <view class="nutrition-item">
+        <text class="nutrition-label">脂肪</text>
+        <text class="nutrition-value">{{recipe.nutritionFacts.fat}}</text>
+      </view>
+      <view class="nutrition-item">
+        <text class="nutrition-label">碳水</text>
+        <text class="nutrition-value">{{recipe.nutritionFacts.carbs}}</text>
+      </view>
+    </view>
+  </view>
+</view>
+
+<!-- 笔记区 -->
+<view class="notes-panel {{showNotes ? 'show' : ''}}">
+  <view class="notes-header">
+    <view class="notes-title">烹饪笔记</view>
+    <view class="notes-close" bindtap="toggleNotes">关闭</view>
+  </view>
+  <textarea
+    class="notes-content"
+    placeholder="在这里记录你的烹饪心得..."
+    value="{{notes}}"
+    bindinput="updateNotes"
+  ></textarea>
+</view>
+
+<!-- 加载状态 -->
+<view class="loading" wx:if="{{loading}}">
+  <view class="loading-spinner"></view>
+  <text class="loading-text">加载中...</text>
+</view>

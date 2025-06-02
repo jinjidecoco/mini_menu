@@ -1,0 +1,29 @@
+{
+  "name": "cook",
+  "version": "1.0.0",
+  "description": "程序员做饭指南微信小程序",
+  "main": "index.js",
+  "scripts": {
+    "dev": "echo '请使用微信开发者工具打开项目'",
+    "deploy:cloud": "wx-cli deploy:functions",
+    "deploy:mini": "wx-cli upload",
+    "test": "jest"
+  },
+  "keywords": [
+    "cook",
+    "recipe",
+    "wechat",
+    "miniprogram"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "mobx-miniprogram": "^4.13.2",
+    "mobx-miniprogram-bindings": "^2.1.5"
+  },
+  "devDependencies": {
+    "eslint": "^8.15.0",
+    "jest": "^28.1.0",
+    "miniprogram-api-typings": "^3.6.0"
+  }
+}

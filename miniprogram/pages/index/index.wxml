@@ -1,0 +1,59 @@
+<!-- index.wxml -->
+<view class="container">
+  <!-- 搜索栏 -->
+  <view class="search-bar" bindtap="goToSearch">
+    <view class="search-input">
+      <text class="iconfont icon-search"></text>
+      <text class="placeholder">搜索菜谱、食材</text>
+    </view>
+  </view>
+
+  <!-- 轮播图 -->
+  <swiper class="banner" indicator-dots="{{true}}" autoplay="{{true}}" interval="{{3000}}" duration="{{500}}" circular="{{true}}" indicator-active-color="#000">
+    <block wx:for="{{bannerList}}" wx:key="id">
+      <swiper-item>
+        <navigator url="{{item.url}}" hover-class="none">
+          <image src="{{item.image}}" mode="aspectFill" class="banner-image"></image>
+          <view class="banner-title">{{item.title}}</view>
+        </navigator>
+      </swiper-item>
+    </block>
+  </swiper>
+
+  <!-- 分类导航 -->
+  <view class="category-section">
+    <view class="section-title">分类浏览</view>
+    <view class="category-list">
+      <view class="category-item" wx:for="{{categoryList}}" wx:key="id" bindtap="goToCategory" data-id="{{item.id}}">
+        <image class="category-icon" src="{{item.icon}}" mode="aspectFit"></image>
+        <text class="category-name">{{item.name}}</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 推荐菜谱 -->
+  <view class="recipe-section">
+    <view class="section-title">推荐菜谱</view>
+    <view class="recipe-list">
+      <view class="recipe-item card" wx:for="{{recipeList}}" wx:key="id" bindtap="goToRecipe" data-id="{{item.id}}">
+        <image class="recipe-cover" src="{{item.cover}}" mode="aspectFill"></image>
+        <view class="recipe-info">
+          <view class="recipe-name">{{item.name}}</view>
+          <view class="recipe-meta">
+            <text class="recipe-difficulty">难度 {{item.difficulty}}</text>
+            <text class="recipe-time">{{item.time}} 分钟</text>
+          </view>
+          <view class="recipe-tags">
+            <text class="tag" wx:for="{{item.tags}}" wx:for-item="tag" wx:key="*this">{{tag}}</text>
+          </view>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 加载状态 -->
+  <view class="loading" wx:if="{{loading}}">
+    <view class="loading-spinner"></view>
+    <text class="loading-text">加载中...</text>
+  </view>
+</view>
