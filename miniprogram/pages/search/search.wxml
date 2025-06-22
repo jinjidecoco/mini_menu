@@ -1,0 +1,113 @@
+<!-- search.wxml -->
+<view class="container">
+  <!-- 搜索框 -->
+  <view class="search-bar">
+    <view class="search-input-wrap">
+      <image class="search-icon" src="/images/svg/search.svg"></image>
+      <input
+        class="search-input"
+        placeholder="搜索菜谱、食材"
+        value="{{keyword}}"
+        bindinput="onInput"
+        confirm-type="search"
+        bindconfirm="doSearch"
+        focus="true"
+      />
+      <text class="clear-icon" bindtap="clearInput" wx:if="{{keyword}}">×</text>
+    </view>
+    <view class="search-btn" bindtap="doSearch">搜索</view>
+  </view>
+
+  <!-- 搜索历史 -->
+  <view class="search-history" wx:if="{{showHistory && historyKeywords.length > 0}}">
+    <view class="section-header">
+      <text class="section-title">搜索历史</text>
+      <text class="clear-history" bindtap="clearHistory">清空</text>
+    </view>
+    <view class="keyword-list">
+      <view
+        class="keyword-item"
+        wx:for="{{historyKeywords}}"
+        wx:key="*this"
+        bindtap="doSearch"
+        data-keyword="{{item}}"
+      >
+        {{item}}
+      </view>
+    </view>
+  </view>
+
+  <!-- 热门搜索 -->
+  <view class="hot-search" wx:if="{{showHot}}">
+    <view class="section-header">
+      <text class="section-title">热门搜索</text>
+    </view>
+    <view class="keyword-list">
+      <view
+        class="keyword-item"
+        wx:for="{{hotKeywords}}"
+        wx:key="*this"
+        bindtap="doSearch"
+        data-keyword="{{item}}"
+      >
+        {{item}}
+      </view>
+    </view>
+  </view>
+
+  <!-- 搜索结果 -->
+  <block wx:if="{{hasResult}}">
+    <view class="result-header">
+      <text class="result-title">搜索结果</text>
+      <text class="result-count">共 {{recipeList.length}} 个菜谱</text>
+    </view>
+
+    <!-- 菜谱列表 -->
+    <view class="recipe-list">
+      <block wx:if="{{recipeList.length > 0}}">
+        <view
+          class="recipe-item card"
+          wx:for="{{recipeList}}"
+          wx:key="id"
+          bindtap="goToRecipe"
+          data-id="{{item.id}}"
+        >
+          <image class="recipe-cover" src="{{item.cover}}" mode="aspectFill"></image>
+          <view class="recipe-info">
+            <view class="recipe-name">{{item.name}}</view>
+            <view class="recipe-meta">
+              <text class="recipe-difficulty">难度 {{item.difficulty}}</text>
+              <text class="recipe-time">{{item.time}} 分钟</text>
+            </view>
+            <view class="recipe-tags">
+              <text class="tag" wx:for="{{item.tags}}" wx:for-item="tag" wx:key="*this">{{tag}}</text>
+            </view>
+          </view>
+        </view>
+      </block>
+
+      <!-- 无结果 -->
+      <view class="empty-result" wx:if="{{recipeList.length === 0 && !loading}}">
+        <image class="empty-icon" src="/images/svg/empty.svg" mode="aspectFit"></image>
+        <text class="empty-text">没有找到相关菜谱</text>
+        <text class="empty-tip">换个关键词试试吧</text>
+      </view>
+    </view>
+  </block>
+
+  <!-- 加载状态 -->
+  <view class="loading" wx:if="{{loading}}">
+    <view class="loading-spinner"></view>
+    <text class="loading-text">加载中...</text>
+  </view>
+
+  <!-- 加载更多 -->
+  <view class="load-more" wx:if="{{hasMore && hasResult && !loading && recipeList.length > 0}}">
+    <text>上拉加载更多</text>
+  </view>
+
+  <!-- 没有更多 -->
+  <view class="no-more" wx:if="{{!hasMore && hasResult && !loading && recipeList.length > 0}}">
+    <text>没有更多了</text>
+  </view>
+</view>

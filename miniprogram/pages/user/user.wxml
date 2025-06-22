@@ -1,0 +1,31 @@
+<view class="container">
+  <!-- 用户信息区域 -->
+  <view class="user-info-section">
+    <view class="avatar-container" wx:if="{{!hasUserInfo}}">
+      <image class="default-avatar" src="/images/default-avatar.png" mode="aspectFill"></image>
+      <button class="login-btn" wx:if="{{canIUseGetUserProfile}}" bindtap="getUserProfile">点击登录</button>
+    </view>
+    <view class="avatar-container" wx:else>
+      <image class="user-avatar" src="{{userInfo.avatarUrl}}" mode="aspectFill"></image>
+      <text class="username">{{userInfo.nickName}}</text>
+    </view>
+  </view>
+
+  <!-- 功能列表 -->
+  <view class="function-list">
+    <view class="function-item" wx:for="{{functionList}}" wx:key="id" bindtap="navigateTo" data-path="{{item.path}}">
+      <view class="function-icon">
+        <image src="/images/icons/{{item.icon}}.png"></image>
+      </view>
+      <view class="function-name">{{item.name}}</view>
+      <view class="arrow">
+        <image src="/images/icons/arrow-right.png"></image>
+      </view>
+    </view>
+  </view>
+
+  <!-- 版本信息 -->
+  <view class="version-info">
+    <text>程序员做饭指南 v1.0.0</text>
+  </view>
+</view>

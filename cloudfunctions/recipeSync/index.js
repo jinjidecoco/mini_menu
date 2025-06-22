@@ -260,6 +260,25 @@ function generateTags(title, description, dirPath) {
 }
 
 /**
+ * 获取上次同步状态
+ */
+async function getLastSyncStatus() {
+  try {
+    const result = await syncStatusCollection.where({
+      type: 'github'
+    }).get();
+
+    if (result.data.length > 0) {
+      return result.data[0];
+    }
+    return null;
+  } catch (error) {
+    console.error('获取同步状态失败:', error);
+    return null;
+  }
+}
+
+/**
  * 更新同步状态
  * @param {Object} status - 同步状态
  */
@@ -268,7 +287,7 @@ async function updateSyncStatus(status) {
     // 查询现有状态
     const result = await syncStatusCollection.where({
       type: 'github'
-    }).get()
+    }).get();
 
     if (result.data.length > 0) {
       // 更新现有记录
@@ -277,7 +296,7 @@ async function updateSyncStatus(status) {
           ...status,
           updatedAt: new Date()
         }
-      })
+      });
     } else {
       // 创建新记录
       await syncStatusCollection.add({
@@ -287,42 +306,76 @@ async function updateSyncStatus(status) {
           createdAt: new Date(),
           updatedAt: new Date()
         }
-      })
+      });
     }
   } catch (error) {
-    console.error('更新同步状态失败:', error)
+    console.error('更新同步状态失败:', error);
   }
 }
 
 // 云函数入口函数
 exports.main = async (event, context) => {
-  try {
-    // 获取菜谱目录
-    const directories = await fetchRecipeDirectories()
+  // 检查是否是定时触发
+  const isScheduled = event.triggerSource === 'timer';
+  console.log(`执行菜谱同步，触发类型: ${isScheduled ? '定时触发' : '手动触发'}`);
 
-    let newRecipes = 0
-    let updatedRecipes = 0
-    const totalRecipes = directories.length
+  try {
+    // 获取上次同步状态
+    const lastSyncStatus = await getLastSyncStatus();
+
+    // 获取菜谱目录
+    const directories = await fetchRecipeDirectories();
+    console.log(`获取到 ${directories.length} 个菜谱目录`);
+
+    let newRecipes = 0;
+    let updatedRecipes = 0;
+    let skippedRecipes = 0;
+    const totalRecipes = directories.length;
+
+    // 如果是定时触发且有上次同步记录，则只同步增量数据
+    const shouldSyncAll = !isScheduled || !lastSyncStatus || !lastSyncStatus.lastSyncTime;
+    const lastSyncTime = lastSyncStatus ? new Date(lastSyncStatus.lastSyncTime) : null;
+
+    console.log(`同步模式: ${shouldSyncAll ? '全量同步' : '增量同步'}`);
+    if (!shouldSyncAll) {
+      console.log(`上次同步时间: ${lastSyncTime}`);
+    }
 
     // 处理每个菜谱目录
     for (const dir of directories) {
-      const dirPath = `${GITHUB_CONTENT_PATH}/${dir.name}`
+      const dirPath = `${GITHUB_CONTENT_PATH}/${dir.name}`;
+
+      // 如果是增量同步，检查是否需要处理
+      if (!shouldSyncAll && lastSyncTime) {
+        const lastModified = new Date(dir.updated_at || dir.commit?.committer?.date);
+        if (lastModified <= lastSyncTime) {
+          console.log(`跳过未更新的菜谱: ${dirPath}`);
+          skippedRecipes++;
+          continue;
+        }
+      }
 
       // 获取菜谱内容
-      const content = await fetchRecipeContent(dirPath)
-      if (!content) continue
+      const content = await fetchRecipeContent(dirPath);
+      if (!content) {
+        console.log(`无法获取菜谱内容: ${dirPath}`);
+        continue;
+      }
 
       // 解析菜谱内容
-      const recipe = parseRecipeMarkdown(content, dirPath)
-      if (!recipe) continue
+      const recipe = parseRecipeMarkdown(content, dirPath);
+      if (!recipe) {
+        console.log(`解析菜谱失败: ${dirPath}`);
+        continue;
+      }
 
       // 生成唯一ID
-      const recipeId = `github_${dir.sha.substring(0, 10)}`
+      const recipeId = `github_${dir.sha.substring(0, 10)}`;
 
       // 检查菜谱是否已存在
       const existingRecipe = await recipesCollection.where({
         source: recipe.source
-      }).get()
+      }).get();
 
       if (existingRecipe.data.length > 0) {
         // 更新现有菜谱
@@ -331,8 +384,9 @@ exports.main = async (event, context) => {
             ...recipe,
             updatedAt: new Date()
           }
-        })
-        updatedRecipes++
+        });
+        updatedRecipes++;
+        console.log(`更新菜谱: ${recipe.name}`);
       } else {
         // 添加新菜谱
         await recipesCollection.add({
@@ -342,8 +396,9 @@ exports.main = async (event, context) => {
             createdAt: new Date(),
             updatedAt: new Date()
           }
-        })
-        newRecipes++
+        });
+        newRecipes++;
+        console.log(`添加新菜谱: ${recipe.name}`);
       }
     }
 
@@ -352,22 +407,27 @@ exports.main = async (event, context) => {
       lastSyncTime: new Date(),
       totalRecipes,
       newRecipes,
-      updatedRecipes
-    })
+      updatedRecipes,
+      skippedRecipes,
+      isScheduled
+    });
 
     return {
       code: 200,
       data: {
         totalRecipes,
         newRecipes,
-        updatedRecipes
+        updatedRecipes,
+        skippedRecipes,
+        isScheduled
       }
-    }
+    };
   } catch (error) {
-    console.error('同步菜谱失败:', error)
+    console.error('同步菜谱失败:', error);
     return {
       code: 500,
-      message: error.message || '同步菜谱失败'
-    }
+      message: error.message || '同步菜谱失败',
+      isScheduled: event.triggerSource === 'timer'
+    };
   }
 }

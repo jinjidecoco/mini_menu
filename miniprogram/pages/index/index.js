@@ -30,22 +30,22 @@ Page({
         bannerList: [
           {
             id: 'banner1',
-            image: '/images/banner/banner1.jpg',
+            image: '/images/recipes/recipe_001.jpg',
             title: '程序员做饭指南',
             url: '/pages/recipe/detail?id=recipe_001'
           },
           {
             id: 'banner2',
-            image: '/images/banner/banner2.jpg',
+            image: '/images/recipes/recipe_002.jpg',
             title: '夏季清爽菜谱',
             url: '/pages/recipe/list?category=summer'
           }
         ],
         categoryList: [
-          { id: 'meat', name: '荤菜', icon: '/images/category/meat.png' },
-          { id: 'vegetable', name: '素菜', icon: '/images/category/vegetable.png' },
-          { id: 'staple', name: '主食', icon: '/images/category/staple.png' },
-          { id: 'soup', name: '汤类', icon: '/images/category/soup.png' }
+          { id: 'meat', name: '荤菜', icon: '/images/svg/circle.svg' },
+          { id: 'vegetable', name: '素菜', icon: '/images/svg/circle.svg' },
+          { id: 'staple', name: '主食', icon: '/images/svg/circle.svg' },
+          { id: 'soup', name: '汤类', icon: '/images/svg/circle.svg' }
         ],
         recipeList: [
           {
@@ -116,11 +116,21 @@ Page({
     })
   },
 
-  // 分享
+  // 分享给朋友
   onShareAppMessage: function () {
     return {
       title: '程序员做饭指南 - 用代码思维重构烹饪流程',
-      path: '/pages/index/index'
+      path: '/pages/index/index',
+      imageUrl: '/images/recipes/recipe_001.jpg'
+    }
+  },
+
+  // 分享到朋友圈
+  onShareTimeline: function() {
+    return {
+      title: '程序员做饭指南 - 用代码思维重构烹饪流程',
+      query: '',
+      imageUrl: '/images/recipes/recipe_001.jpg'
     }
   }
 })

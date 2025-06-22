@@ -28,15 +28,15 @@
   <!-- 操作栏 -->
   <view class="action-bar">
     <view class="action-btn {{isFavorite ? 'active' : ''}}" bindtap="toggleFavorite">
-      <text class="iconfont {{isFavorite ? 'icon-star-filled' : 'icon-star'}}"></text>
+      <image class="action-icon" src="{{isFavorite ? '/images/svg/star-filled.svg' : '/images/svg/star.svg'}}"></image>
       <text>{{isFavorite ? '已收藏' : '收藏'}}</text>
     </view>
     <view class="action-btn" bindtap="toggleNotes">
-      <text class="iconfont icon-edit"></text>
+      <image class="action-icon" src="/images/svg/edit.svg"></image>
       <text>笔记</text>
     </view>
     <button class="action-btn share-btn" open-type="share">
-      <text class="iconfont icon-share"></text>
+      <image class="action-icon" src="/images/svg/share.svg"></image>
       <text>分享</text>
     </button>
   </view>
@@ -64,7 +64,7 @@
     <view class="section-title">工具</view>
     <view class="tool-list">
       <view class="tool-item {{item.required ? 'required' : ''}}" wx:for="{{recipe.tools}}" wx:key="name">
-        <text class="iconfont {{item.required ? 'icon-check-circle' : 'icon-circle'}}"></text>
+        <image class="tool-icon" src="{{item.required ? '/images/svg/check-circle.svg' : '/images/svg/circle.svg'}}"></image>
         <text>{{item.name}}</text>
       </view>
     </view>

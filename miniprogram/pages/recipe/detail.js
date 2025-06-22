@@ -15,13 +15,29 @@ Page({
     notes: ''
   },
 
-  onLoad: function (options) {
+    onLoad: function (options) {
     if (options.id) {
       this.setData({
         recipeId: options.id
       })
       this.loadRecipeDetail(options.id)
+
+      // 检查是否已收藏
+      this.checkFavoriteStatus(options.id)
+
+      // 加载用户笔记
+      this.loadNotesFromStorage()
     }
+  },
+
+  // 检查收藏状态
+  checkFavoriteStatus: function(recipeId) {
+    const favorites = wx.getStorageSync('favorites') || []
+    const isFavorite = favorites.some(item => item.id === recipeId)
+
+    this.setData({
+      isFavorite: isFavorite
+    })
   },
 
   onUnload: function () {
@@ -66,35 +82,35 @@ Page({
               id: 1,
               title: '准备食材',
               description: '西红柿洗净切块，鸡蛋打散',
-              image: '/images/steps/recipe_001_1.jpg',
+              image: '/images/recipes/recipe_001.jpg',
               timer: null
             },
             {
               id: 2,
               title: '炒鸡蛋',
               description: '锅烧热，倒入食用油，油热后倒入打散的鸡蛋',
-              image: '/images/steps/recipe_001_2.jpg',
+              image: '/images/recipes/recipe_002.jpg',
               timer: {duration: 60, description: '小火炒鸡蛋'}
             },
             {
               id: 3,
               title: '炒西红柿',
               description: '将炒好的鸡蛋盛出，锅中重新倒油，放入西红柿翻炒',
-              image: '/images/steps/recipe_001_3.jpg',
+              image: '/images/recipes/recipe_003.jpg',
               timer: {duration: 120, description: '中火炒西红柿'}
             },
             {
               id: 4,
               title: '混合炒制',
               description: '西红柿炒至出汁后，放入炒好的鸡蛋，加入盐和白糖翻炒均匀',
-              image: '/images/steps/recipe_001_4.jpg',
+              image: '/images/recipes/recipe_004.jpg',
               timer: {duration: 60, description: '混合翻炒'}
             },
             {
               id: 5,
               title: '出锅装盘',
               description: '炒至汤汁浓稠，关火出锅装盘',
-              image: '/images/steps/recipe_001_5.jpg',
+              image: '/images/recipes/recipe_001.jpg',
               timer: null
             }
           ],
@@ -108,8 +124,7 @@ Page({
             fat: '15g',
             carbs: '8g'
           }
-        },
-        isFavorite: Math.random() > 0.5 // 模拟是否收藏
+        }
       })
     }, 1000)
   },
@@ -195,13 +210,46 @@ Page({
 
   // 切换收藏状态
   toggleFavorite: function () {
-    // 这里应该调用云函数来更新收藏状态
+    const newFavoriteStatus = !this.data.isFavorite
+
+    // 更新状态
     this.setData({
-      isFavorite: !this.data.isFavorite
+      isFavorite: newFavoriteStatus
     })
 
+    // 获取当前收藏列表
+    const favorites = wx.getStorageSync('favorites') || []
+
+    if (newFavoriteStatus) {
+      // 添加到收藏
+      const recipeToAdd = {
+        id: this.data.recipe.id,
+        name: this.data.recipe.name,
+        image: this.data.recipe.cover,
+        description: this.data.recipe.description,
+        difficulty: this.data.recipe.difficulty,
+        cookTime: this.data.recipe.time,
+        timestamp: new Date().getTime()
+      }
+
+      // 检查是否已存在
+      const existingIndex = favorites.findIndex(item => item.id === recipeToAdd.id)
+      if (existingIndex === -1) {
+        favorites.unshift(recipeToAdd) // 添加到列表开头
+      }
+    } else {
+      // 从收藏中移除
+      const index = favorites.findIndex(item => item.id === this.data.recipe.id)
+      if (index !== -1) {
+        favorites.splice(index, 1)
+      }
+    }
+
+    // 保存到本地存储
+    wx.setStorageSync('favorites', favorites)
+
     wx.showToast({
-      title: this.data.isFavorite ? '已收藏' : '已取消收藏',
+      title: newFavoriteStatus ? '已收藏' : '已取消收藏',
       icon: 'success'
     })
   },
@@ -215,16 +263,74 @@ Page({
 
   // 更新笔记
   updateNotes: function (e) {
+    const newNotes = e.detail.value
+
     this.setData({
-      notes: e.detail.value
+      notes: newNotes
     })
+
+    // 保存笔记到本地存储
+    this.saveNotesToStorage(newNotes)
   },
 
-  // 分享
+  // 保存笔记到本地存储
+  saveNotesToStorage: function(notes) {
+    const recipeId = this.data.recipeId
+    if (!recipeId) return
+
+    // 获取所有笔记
+    const allNotes = wx.getStorageSync('recipe_notes') || {}
+
+    // 更新当前菜谱的笔记
+    allNotes[recipeId] = {
+      content: notes,
+      updatedAt: new Date().getTime()
+    }
+
+    // 保存回本地存储
+    wx.setStorageSync('recipe_notes', allNotes)
+  },
+
+  // 从本地存储加载笔记
+  loadNotesFromStorage: function() {
+    const recipeId = this.data.recipeId
+    if (!recipeId) return
+
+    const allNotes = wx.getStorageSync('recipe_notes') || {}
+    const recipeNotes = allNotes[recipeId]
+
+    if (recipeNotes) {
+      this.setData({
+        notes: recipeNotes.content
+      })
+    }
+  },
+
+  // 分享给朋友
   onShareAppMessage: function () {
+    const recipe = this.data.recipe
+
     return {
-      title: `${this.data.recipe.name} - 程序员做饭指南`,
-      path: `/pages/recipe/detail?id=${this.data.recipeId}`
+      title: `${recipe.name} - 程序员做饭指南`,
+      path: `/pages/recipe/detail?id=${this.data.recipeId}`,
+      imageUrl: recipe.cover || '/images/share-default.png',
+      success: function(res) {
+        wx.showToast({
+          title: '分享成功',
+          icon: 'success'
+        })
+      }
+    }
+  },
+
+  // 分享到朋友圈
+  onShareTimeline: function() {
+    const recipe = this.data.recipe
+
+    return {
+      title: `【程序员做饭指南】${recipe.name}`,
+      query: `id=${this.data.recipeId}`,
+      imageUrl: recipe.cover || '/images/share-default.png'
     }
   }
 })
